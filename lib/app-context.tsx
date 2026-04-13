@@ -15,10 +15,15 @@ import type {
   ExtractedGuideline,
 } from "./types";
 import {
-  extractGuidelinesFromPDF,
+  extractGuidelinesFromPDF as extractWithGemini,
+  fileToBase64,
+} from "./gemini";
+import {
+  extractGuidelinesFromPDF as extractWithServer,
   batchCompareGuidelines,
   exportToExcel,
 } from "./ai-provider";
+import { getGeminiApiKey } from "./provider-detection";
 
 type AppContextType = {
   documentA: DocumentInfo;
@@ -136,7 +141,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
       startProgressSimulation(setExtractionProgress);
 
       try {
-        const result = await extractGuidelinesFromPDF(document.file, doc);
+        let result: ExtractionResult | null = null;
+
+        // Priority 1: Gemini direct — works on deployed site (no server needed)
+        const apiKey = getGeminiApiKey();
+        if (apiKey) {
+          try {
+            result = await extractWithGemini(document.file, doc);
+          } catch (err) {
+            console.warn("Gemini extraction failed, trying server fallback:", err);
+          }
+        }
+
+        // Priority 2: Server route fallback — works with `next dev`
+        if (!result || !result.success) {
+          try {
+            result = await extractWithServer(document.file, doc);
+          } catch (err) {
+            console.warn("Server extraction also failed:", err);
+          }
+        }
+
+        // If both failed, produce a clear error
+        if (!result) {
+          result = {
+            success: false,
+            guidelines: [],
+            fileName: document.file.name,
+            pageCount: 0,
+            fileSize: document.file.size,
+            extractedAt: new Date().toISOString(),
+            error: "No AI provider available. Set a Gemini API key in Settings or run locally with `next dev`.",
+          };
+        }
 
         // Stop simulation and complete progress smoothly
         stopProgressSimulation();

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { streamChat } from "@/lib/chat-provider";
+import { detectProviders, type ProviderStatus } from "@/lib/provider-detection";
 
 type Message = {
   id: string;
@@ -236,6 +238,12 @@ export function LarpGPT({ documentContext, guidelinesContext }: LarpGPTProps) {
     }
   }, [input]);
 
+  const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
+
+  useEffect(() => {
+    detectProviders().then(setProviderStatus);
+  }, []);
+
   const sendMessage = useCallback(async (messageText?: string) => {
     const text = messageText || input.trim();
     if (!text || isLoading) return;
@@ -261,7 +269,6 @@ export function LarpGPT({ documentContext, guidelinesContext }: LarpGPTProps) {
     setError(null);
     setIsLoading(true);
 
-    // Build context
     let contextMessage = "";
     if (documentContext || guidelinesContext) {
       contextMessage = `\n\nContext:\n${guidelinesContext?.slice(0, 5000) || ""}`;
@@ -271,58 +278,31 @@ export function LarpGPT({ documentContext, guidelinesContext }: LarpGPTProps) {
     abortRef.current = controller;
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          messages: [
-            ...messages.map((m) => ({ role: m.role, content: m.content })),
-            { role: "user" as const, content: text + contextMessage },
-          ],
-        }),
-      });
+      const allMessages = [
+        { role: "system" as const, content: "" },
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+        { role: "user" as const, content: text + contextMessage },
+      ];
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({ error: "Request failed" }));
-        throw new Error(errData.error || `HTTP ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("No response stream");
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const data = line.slice(6).trim();
-          if (data === "[DONE]") continue;
-
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.type === "token" && parsed.content) {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, content: m.content + parsed.content }
-                    : m
-                )
-              );
-            } else if (parsed.type === "error") {
-              setError(parsed.error);
-            }
-          } catch { /* skip malformed SSE */ }
-        }
-      }
+      await streamChat(
+        allMessages,
+        {
+          onToken: (token) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, content: m.content + token }
+                  : m
+              )
+            );
+          },
+          onError: (err) => {
+            setError(err);
+          },
+          onDone: () => {},
+        },
+        controller.signal
+      );
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       const errorMessage = err instanceof Error ? err.message : "Error";
@@ -330,19 +310,20 @@ export function LarpGPT({ documentContext, guidelinesContext }: LarpGPTProps) {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
-            ? { ...m, content: m.content || `Sorry, I encountered an error: ${errorMessage}. Please try again.`, isStreaming: false }
+            ? { ...m, content: m.content || `Error: ${errorMessage}`, isStreaming: false }
             : m
         )
       );
     } finally {
       setIsLoading(false);
       abortRef.current = null;
-      // Mark streaming complete
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId ? { ...m, isStreaming: false } : m
         )
       );
+      // Refresh provider status after a chat interaction
+      detectProviders(true).then(setProviderStatus);
     }
   }, [documentContext, guidelinesContext, isLoading, messages]);
 
@@ -365,7 +346,20 @@ export function LarpGPT({ documentContext, guidelinesContext }: LarpGPTProps) {
           </div>
           <div>
             <h2 className="font-display font-semibold text-[16px] text-white">LarpGPT</h2>
-            <p className="text-[12px] text-slate-500 dark:text-[rgba(255,255,255,0.45)]">AI-Powered Mortgage Assistant</p>
+            <div className="flex items-center gap-1.5">
+              {providerStatus && (
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  providerStatus.provider === "ollama" ? "bg-[#30D158]" :
+                  providerStatus.provider === "gemini" ? "bg-[#0A84FF]" :
+                  "bg-[#FF9F0A]"
+                }`} />
+              )}
+              <p className="text-[12px] text-slate-500 dark:text-[rgba(255,255,255,0.45)]">
+                {providerStatus?.provider === "ollama" ? "Ollama" :
+                 providerStatus?.provider === "gemini" ? "Gemini" :
+                 providerStatus ? "No Provider" : "Detecting..."}
+              </p>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
