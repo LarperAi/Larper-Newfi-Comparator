@@ -21,8 +21,10 @@ let pdfjsLib: typeof import("pdfjs-dist") | null = null;
 async function loadPdfJs() {
   if (!pdfjsLib) {
     pdfjsLib = await import("pdfjs-dist");
-    // Set worker source — use the CDN fallback so we don't need to copy the worker file
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+    // Use empty workerSrc so pdfjs runs synchronously in the main thread (fake worker).
+    // This is more reliable than CDN workers which can fail due to MIME type or CORS issues
+    // in Vercel static deployments.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "";
   }
   return pdfjsLib;
 }
@@ -42,7 +44,12 @@ export async function extractTextFromPDFClient(file: File): Promise<{
 }> {
   const pdfjs = await loadPdfJs();
   const arrayBuffer = await file.arrayBuffer();
-  const pdf: PDFDocumentProxy = await pdfjs.getDocument({ data: arrayBuffer }) as unknown as PDFDocumentProxy;
+
+  // getDocument() returns a PDFDocumentLoadingTask. Always use .promise to get
+  // the actual PDFDocumentProxy — awaiting the task directly is unreliable across
+  // pdfjs versions and can silently return the task object (numPages = undefined).
+  const task = pdfjs.getDocument({ data: arrayBuffer });
+  const pdf: PDFDocumentProxy = await ((task as any).promise ?? task) as PDFDocumentProxy;
 
   const pages: string[] = [];
   const pageTexts: string[] = [];
@@ -55,12 +62,13 @@ export async function extractTextFromPDFClient(file: File): Promise<{
     pageTexts.push(`--- Page ${i} ---\n${pageText}`);
   }
 
+  const pageCount = pdf.numPages;
   pdf.destroy();
 
   return {
     text: pageTexts.join("\n\n"),
     pages,
-    pageCount: pdf.numPages,
+    pageCount,
   };
 }
 

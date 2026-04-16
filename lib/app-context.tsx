@@ -84,11 +84,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pageNum: i + 1,
         text,
       }));
+      if (pages.length === 0) {
+        throw new Error(`PDF returned 0 pages. The file may be image-based (scanned), encrypted, or corrupted.`);
+      }
       sellerPagesRef.current = pages;
       setSellerPages(pages);
       setSellerReady(true);
     } catch (err) {
       console.error("PDF extraction failed:", err);
+      setComparisonError(err instanceof Error ? err.message : "PDF extraction failed.");
     } finally {
       setSellerLoading(false);
       setSellerProgress(100);

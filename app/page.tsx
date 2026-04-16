@@ -7,7 +7,7 @@ import type { ComparisonRow, TemplateVerdict, TemplateComparisonResult } from "@
 
 export default function Home() {
   const {
-    sellerFile, sellerName, sellerReady, sellerLoading, sellerProgress,
+    sellerFile, sellerName, sellerReady, sellerLoading, sellerProgress, sellerPages,
     loadSellerPDF, clearSeller,
     newfiTemplate, templateLoading,
     loadNewfiTemplate, clearTemplate,
@@ -47,7 +47,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Nav */}
+              {/* Nav — centered by matching spacer widths on both sides */}
               <div className="liquid-glass flex items-center gap-1 p-1">
                 {(["upload", "results"] as const).map((tab) => (
                   <button
@@ -76,6 +76,8 @@ export default function Home() {
                 ))}
               </div>
 
+              {/* Right spacer — same width as logo to keep nav centered */}
+              <div className="w-[160px]" />
             </div>
           </div>
         </div>
@@ -114,7 +116,7 @@ export default function Home() {
                 isLoading={sellerLoading}
                 progress={sellerProgress}
                 loadingLabel="Extracting PDF text..."
-                readyLabel={`PDF ready · ${sellerName.replace(/\.[^/.]+$/, "")}`}
+                readyLabel={`${sellerPages.length} pages extracted`}
                 onFileSelect={loadSellerPDF}
                 onClear={clearSeller}
               />
