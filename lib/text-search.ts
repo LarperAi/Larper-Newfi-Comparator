@@ -16,7 +16,8 @@ export type PageText = {
 export type SearchResult = {
   text: string;      // verbatim passage from seller PDF
   pageNum: number;
-  score: number;     // TF-IDF relevance score (0–1)
+  score: number;     // normalized 0-1 (for display/ranking)
+  rawScore: number;  // absolute TF-IDF score (for thresholding)
 };
 
 type TfIdfIndex = {
@@ -149,8 +150,21 @@ export function searchIndex(
     text: doc.text,
     pageNum: doc.pageNum,
     score: score / maxScore,
+    rawScore: score,
   }));
 }
+
+const TOPIC_SYNONYMS: Record<string, string[]> = {
+  "geographic": ["state", "states", "eligible states", "ineligible states", "restricted", "jurisdiction"],
+  "restrictions": ["ineligible", "prohibited", "not allowed", "restricted", "limitations", "exclusions"],
+  "credit score": ["fico", "credit score", "minimum score", "qualifying score"],
+  "buydown": ["buydown", "buy down", "temporary buydown", "2/1 buydown"],
+  "prepayment": ["prepayment", "prepay", "penalty", "ppp"],
+  "escrow": ["escrow", "impound", "holdback"],
+  "dti": ["debt to income", "dti", "debt-to-income", "qualifying ratio"],
+  "ltv": ["loan to value", "ltv", "cltv", "hcltv"],
+  "dscr": ["debt service coverage", "dscr", "rental income", "net operating income"],
+};
 
 /**
  * Build a search query string from a Newfi row topic and guideline text.
@@ -164,5 +178,14 @@ export function buildQuery(topic: string, newfiText: string): string {
   const keyTermPattern = /(\d+(?:\.\d+)?%|\$[\d,]+|\d+\s*(?:month|year|day|unit|acre|loan|FICO|LTV|DTI|DSCR)|(?:minimum|maximum|required|eligible|ineligible|prohibited|allowed|not allowed|must|shall))/gi;
   const keyTermMatches = (newfiText.slice(0, 300).match(keyTermPattern) || []).slice(0, 5);
 
-  return `${topicTerms} ${keyTermMatches.join(" ")}`.trim();
+  // Expand with synonyms for common mortgage topics
+  const topicLower = topic.toLowerCase();
+  const extraTerms: string[] = [];
+  for (const [key, synonyms] of Object.entries(TOPIC_SYNONYMS)) {
+    if (topicLower.includes(key)) {
+      extraTerms.push(...synonyms);
+    }
+  }
+
+  return `${topicTerms} ${extraTerms.join(" ")} ${keyTermMatches.join(" ")}`.trim();
 }

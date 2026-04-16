@@ -196,13 +196,18 @@ export async function runTabComparison(
     let sellerText = "Not addressed";
     let pageRef = "N/A";
 
-    if (results.length > 0 && results[0].score > 0.1) {
-      // Take the best result, truncate if very long
+    if (results.length > 0 && results[0].rawScore > 0.05) {
       const best = results[0];
-      sellerText = best.text.length > 800
-        ? best.text.slice(0, 800) + "..."
-        : best.text;
-      pageRef = `p.${best.pageNum}`;
+      // Validate: at least one topic keyword must appear in the result text
+      const topicTokens = row.topic.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).filter(w => w.length > 3);
+      const sellerLower = best.text.toLowerCase();
+      const hasTopicRelevance = topicTokens.some(t => sellerLower.includes(t));
+      if (hasTopicRelevance) {
+        sellerText = best.text.length > 800
+          ? best.text.slice(0, 800) + "..."
+          : best.text;
+        pageRef = `p.${best.pageNum}`;
+      }
     }
 
     const { verdict, creditConcern, analysis } = determineVerdict(
