@@ -1,4 +1,4 @@
-import type { NewfiTab } from "./newfiGuidelines";
+export type NewfiTab = "NON-QM" | "DSCR";
 
 export type UploadResponse = {
   success: boolean;

@@ -23,8 +23,19 @@ export async function readNewfiTemplate(file: File): Promise<NewfiTemplate> {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array", cellText: true, cellDates: true });
 
+  /**
+   * Find a sheet by exact name, then fall back to a fuzzy match (case-insensitive
+   * substring). This handles slight naming variations like "Non-QM" vs "Non-QM Guides".
+   */
+  function findSheet(preferredName: string): typeof workbook.Sheets[string] | undefined {
+    if (workbook.Sheets[preferredName]) return workbook.Sheets[preferredName];
+    const lower = preferredName.toLowerCase();
+    const match = workbook.SheetNames.find(n => n.toLowerCase().includes(lower.split(" ")[0]));
+    return match ? workbook.Sheets[match] : undefined;
+  }
+
   function parseTab(sheetName: string, tab: "NON-QM" | "DSCR"): NewfiTemplateRow[] {
-    const sheet = workbook.Sheets[sheetName];
+    const sheet = findSheet(sheetName);
     if (!sheet) return [];
 
     // Convert to array of arrays (raw values)

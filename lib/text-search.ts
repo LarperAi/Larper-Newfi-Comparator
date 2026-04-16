@@ -34,6 +34,9 @@ const STOP_WORDS = new Set([
   "if", "then", "than", "so", "as", "it", "its", "this", "that", "these",
   "those", "all", "any", "each", "every", "both", "either", "neither",
   "one", "two", "three", "per", "also", "only", "more", "must", "following",
+  // Mortgage-specific stopwords: too common across all documents to be discriminating
+  "loan", "lender", "borrower", "guidelines", "guideline", "section",
+  "pursuant", "loans", "lenders", "borrowers",
 ]);
 
 function tokenize(text: string): string[] {
@@ -61,7 +64,9 @@ export function buildSearchIndex(pages: PageText[]): TfIdfIndex {
       .filter(p => p.length > 40); // Skip very short fragments
 
     if (paragraphs.length === 0) {
-      // Fallback: use the whole page as one document
+      // Fallback: use the whole page as one document, but skip whitespace/number-only pages
+      const stripped = page.text.replace(/[\s\d]/g, "");
+      if (stripped.length < 20) continue; // page is essentially whitespace or numbers only
       const tokens = tokenize(page.text);
       if (tokens.length > 0) {
         documents.push({ pageNum: page.pageNum, text: page.text, tokens });
@@ -137,8 +142,9 @@ export function searchIndex(
   scores.sort((a, b) => b.score - a.score);
   const top = scores.slice(0, topK);
 
-  // Normalize scores to 0–1
-  const maxScore = top[0]?.score || 1;
+  // Normalize scores to 0–1. Guard against NaN when maxScore is 0.
+  const maxScore = top[0]?.score ?? 0;
+  if (maxScore === 0) return [];
   return top.map(({ doc, score }) => ({
     text: doc.text,
     pageNum: doc.pageNum,
