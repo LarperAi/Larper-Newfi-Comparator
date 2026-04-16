@@ -26,14 +26,17 @@ function extractNumbers(text: string): number[] {
 }
 
 /**
- * Check if a text contains a "more restrictive" keyword relative to another.
+ * Check if a text contains a strong prohibition keyword.
+ * Deliberately excludes "cannot" and "may not" because they appear constantly
+ * in constraint language ("cannot exceed X", "may not exceed Y") which is NOT
+ * a prohibition of the topic itself — only outright bans count.
  */
 function hasProhibitionKeyword(text: string): boolean {
-  return /\b(not allowed|prohibited|ineligible|not eligible|not permitted|cannot|may not)\b/i.test(text);
+  return /\b(not\s+allowed|prohibited|ineligible|not\s+eligible|not\s+permitted|shall\s+not|must\s+not)\b/i.test(text);
 }
 
 function hasAllowanceKeyword(text: string): boolean {
-  return /\b(allowed|eligible|permitted|acceptable|may be used|is allowed)\b/i.test(text);
+  return /\b(allowed|eligible|permitted|acceptable|may\s+be\s+used|is\s+allowed)\b/i.test(text);
 }
 
 // ── Verdict determination ────────────────────────────────────────────
@@ -62,11 +65,13 @@ function determineVerdict(
   // Relevance guard: if seller text shares almost no content with the topic,
   // keyword matches are likely false positives from unrelated sections.
   const topicWords = new Set(
-    topic.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z]/g, '')).filter(w => w.length > 3)
+    topic.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z]/g, '')).filter(w => w.length > 2)
   );
-  const sellerWordList = sellerLower.split(/\s+/).map(w => w.replace(/[^a-z]/g, '')).filter(w => w.length > 3);
+  const sellerWordList = sellerLower.split(/\s+/).map(w => w.replace(/[^a-z]/g, '')).filter(w => w.length > 2);
   const topicOverlap = sellerWordList.filter(w => topicWords.has(w)).length;
   const isLikelyMismatch = topicOverlap === 0; // seller text has zero topic keywords
+  // CONFLICT requires strong topic relevance — overlap ≥ 2 distinct topic words
+  const hasStrongTopicMatch = topicOverlap >= 2;
 
   // Extract numbers from both texts
   const newfiNums = extractNumbers(newfiText);
@@ -79,11 +84,12 @@ function determineVerdict(
   const sellerAllows = hasAllowanceKeyword(sellerText);
 
   if (!isLikelyMismatch) {
-    if (newfiProhibits && sellerAllows) {
+    // CONFLICT: requires strong topic overlap + clear opposing prohibition/allowance statements
+    if (hasStrongTopicMatch && newfiProhibits && sellerAllows) {
       return {
         verdict: "CONFLICT",
         creditConcern: "HIGH",
-        analysis: `Newfi prohibits this but seller's guide appears to allow it — direct conflict requiring immediate review.`,
+        analysis: `Newfi explicitly prohibits this but seller's guide appears to allow it — direct conflict requiring immediate review.`,
       };
     }
 
@@ -180,11 +186,11 @@ function determineVerdict(
     };
   }
 
-  // Low similarity, no clear numeric signal — flag for review as MORE PERMISSIVE (conservative)
+  // Low similarity, no clear numeric signal — cannot determine direction; flag for manual review
   return {
-    verdict: "MORE PERMISSIVE",
+    verdict: "SILENT / NOT ADDRESSED",
     creditConcern: "MEDIUM",
-    analysis: `Unable to confirm seller alignment on ${topic.toLowerCase()}. Seller text found but differs from Newfi — review recommended.`,
+    analysis: `Seller text found for "${topic}" but insufficient overlap to determine alignment. Manual review required.`,
   };
 }
 
