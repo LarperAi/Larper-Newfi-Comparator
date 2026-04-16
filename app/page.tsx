@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DocumentUploadCard } from "@/components/DocumentUploadCard";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useApp } from "@/lib/app-context";
 import type { ComparisonRow, TemplateVerdict, TemplateComparisonResult } from "@/lib/types";
 
@@ -76,8 +77,10 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Right spacer — same width as logo to keep nav centered */}
-              <div className="w-[160px]" />
+              {/* Right side — theme toggle, sized to match logo width for centering */}
+              <div className="w-[160px] flex justify-end">
+                <ThemeToggle />
+              </div>
             </div>
           </div>
         </div>
