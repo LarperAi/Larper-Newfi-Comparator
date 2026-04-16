@@ -59,6 +59,15 @@ function determineVerdict(
     };
   }
 
+  // Relevance guard: if seller text shares almost no content with the topic,
+  // keyword matches are likely false positives from unrelated sections.
+  const topicWords = new Set(
+    topic.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z]/g, '')).filter(w => w.length > 3)
+  );
+  const sellerWordList = sellerLower.split(/\s+/).map(w => w.replace(/[^a-z]/g, '')).filter(w => w.length > 3);
+  const topicOverlap = sellerWordList.filter(w => topicWords.has(w)).length;
+  const isLikelyMismatch = topicOverlap === 0; // seller text has zero topic keywords
+
   // Extract numbers from both texts
   const newfiNums = extractNumbers(newfiText);
   const sellerNums = extractNumbers(sellerText);
@@ -69,24 +78,26 @@ function determineVerdict(
   const newfiAllows = hasAllowanceKeyword(newfiText);
   const sellerAllows = hasAllowanceKeyword(sellerText);
 
-  if (newfiProhibits && sellerAllows) {
-    return {
-      verdict: "CONFLICT",
-      creditConcern: "HIGH",
-      analysis: `Newfi prohibits this but seller's guide appears to allow it — direct conflict requiring immediate review.`,
-    };
-  }
+  if (!isLikelyMismatch) {
+    if (newfiProhibits && sellerAllows) {
+      return {
+        verdict: "CONFLICT",
+        creditConcern: "HIGH",
+        analysis: `Newfi prohibits this but seller's guide appears to allow it — direct conflict requiring immediate review.`,
+      };
+    }
 
-  if (newfiAllows && sellerProhibits) {
-    return {
-      verdict: "MORE RESTRICTIVE",
-      creditConcern: null,
-      analysis: `Seller is more restrictive than Newfi on this topic. No credit concern.`,
-    };
+    if (newfiAllows && sellerProhibits) {
+      return {
+        verdict: "MORE RESTRICTIVE",
+        creditConcern: null,
+        analysis: `Seller is more restrictive than Newfi on this topic. No credit concern.`,
+      };
+    }
   }
 
   // Numeric comparison: find if seller is more/less permissive
-  if (newfiNums.length > 0 && sellerNums.length > 0) {
+  if (!isLikelyMismatch && newfiNums.length > 0 && sellerNums.length > 0) {
     const newfiPrimary = newfiNums[0];
     const sellerPrimary = sellerNums[0];
 
@@ -157,6 +168,15 @@ function determineVerdict(
       verdict: "ALIGNED",
       creditConcern: null,
       analysis: `Seller's language appears substantially similar to Newfi's requirement for ${topic.toLowerCase()}.`,
+    };
+  }
+
+  // If seller text appears to be from an unrelated section, don't manufacture a verdict
+  if (isLikelyMismatch) {
+    return {
+      verdict: "SILENT / NOT ADDRESSED",
+      creditConcern: "MEDIUM",
+      analysis: `Topic "${topic}" — seller text found but appears to be from an unrelated section. Manual review needed.`,
     };
   }
 
