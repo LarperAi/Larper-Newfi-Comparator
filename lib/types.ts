@@ -90,3 +90,55 @@ export type AppState = {
   newfiBaselineText: string;
   activePage: "upload" | "compare" | "chat";
 };
+
+// ===== NEWFI TEMPLATE COMPARISON TYPES =====
+
+export type NewfiTemplateRow = {
+  rowNum: number;
+  tab: "NON-QM" | "DSCR";
+  category: string;
+  topic: string;
+  newfiText: string;
+};
+
+export type TemplateVerdict =
+  | "ALIGNED"
+  | "MORE RESTRICTIVE"
+  | "MORE PERMISSIVE"
+  | "SILENT / NOT ADDRESSED"
+  | "CONFLICT";
+
+export type CreditConcernLevel = "HIGH" | "MEDIUM" | "LOW" | null;
+
+export type ComparisonRow = {
+  rowNum: number;
+  tab: "NON-QM" | "DSCR";
+  category: string;
+  topic: string;
+  newfiText: string;
+  sellerText: string;          // verbatim text found in seller PDF + page ref
+  pageRef: string;             // e.g. "p.45" or "N/A"
+  verdict: TemplateVerdict;
+  creditConcern: CreditConcernLevel;
+  analysis: string;            // one-sentence explanation of the verdict
+};
+
+export type TemplateComparisonResult = {
+  tab: "NON-QM" | "DSCR";
+  rows: ComparisonRow[];
+  completedAt: string;
+  sellerName: string;
+  totalRows: number;
+  alignedCount: number;
+  morePermissiveCount: number;
+  moreRestrictiveCount: number;
+  silentCount: number;
+  conflictCount: number;
+};
+
+export type NewfiTemplate = {
+  nonQmRows: NewfiTemplateRow[];
+  dscrRows: NewfiTemplateRow[];
+  fileName: string;
+  loadedAt: string;
+};

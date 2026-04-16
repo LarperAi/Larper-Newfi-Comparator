@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // GitHub Pages: static export + base path
+  // Vercel: static export served from root
   output: "export",
-  basePath: "/larper",
   images: { unoptimized: true },
 
   // Optimize package imports to reduce bundle size
