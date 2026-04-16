@@ -23,50 +23,6 @@ export type SectionChunk = {
   parentHeading: string | null;
 };
 
-export type TabAnalysis = {
-  tab: NewfiTab;
-  score: number;
-  coveredTopics: string[];
-  missingTopics: string[];
-  recommendations: string[];
-  matchedGuidelines: GuidelineMatch[];
-};
-
-export type GuidelineMatch = {
-  rowNumber: number;
-  category: string;
-  topic: string;
-  guideline: string;
-  foundInSellerGuide: boolean;
-  evidence?: string;
-  confidence: "high" | "medium" | "low";
-};
-
-export type AnalysisResult = {
-  overallScore: number;
-  summary: string;
-  tabAnalyses: TabAnalysis[];
-  criticalIssues: string[];
-  extractedTopics: string[];
-  processedAt: string;
-  fileName: string;
-};
-
-export type HistoryEntry = {
-  id: string;
-  fileName: string;
-  fileSize: number;
-  overallScore: number;
-  processedAt: string;
-  summary: string;
-};
-
-export type ProcessingState = {
-  stage: "idle" | "uploading" | "extracting" | "analyzing" | "complete" | "error";
-  message: string;
-  progress: number;
-};
-
 // ===== NEW TYPES FOR UPGRADED APP =====
 
 export type ExtractedGuideline = {
@@ -132,5 +88,5 @@ export type AppState = {
   isComparing: boolean;
   comparisonProgress: number;
   newfiBaselineText: string;
-  activePage: "upload" | "compare";
+  activePage: "upload" | "compare" | "chat";
 };
