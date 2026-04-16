@@ -200,16 +200,21 @@ const TOPIC_SYNONYMS: Record<string, string[]> = {
 };
 
 /**
- * Build a search query string from a Newfi row topic and guideline text.
+ * Build a search query string from a Newfi row topic, category, and guideline text.
  * Extracts key terms: topic words, numeric thresholds, mortgage-specific terms.
+ *
+ * @param topic     Newfi row topic name (e.g. "Geographic Restrictions")
+ * @param newfiText Full Newfi guideline text for this row
+ * @param category  Newfi category (e.g. "Eligibility") — added for extra signal
  */
-export function buildQuery(topic: string, newfiText: string): string {
-  // Always include the topic
+export function buildQuery(topic: string, newfiText: string, category = ""): string {
+  // Always include the topic and category
   const topicTerms = topic.replace(/[^a-zA-Z0-9\s]/g, " ").trim();
+  const categoryTerms = category.replace(/[^a-zA-Z0-9\s]/g, " ").trim();
 
-  // Extract key numeric/mortgage terms from newfiText (first 300 chars)
+  // Extract key numeric/mortgage terms from ALL of newfiText (not just first 300 chars)
   const keyTermPattern = /(\d+(?:\.\d+)?%|\$[\d,]+|\d+\s*(?:month|year|day|unit|acre|loan|FICO|LTV|DTI|DSCR)|(?:minimum|maximum|required|eligible|ineligible|prohibited|allowed|not allowed|must|shall))/gi;
-  const keyTermMatches = (newfiText.slice(0, 300).match(keyTermPattern) || []).slice(0, 5);
+  const keyTermMatches = (newfiText.match(keyTermPattern) || []).slice(0, 10);
 
   // Expand with synonyms for common mortgage topics
   const topicLower = topic.toLowerCase();
@@ -220,5 +225,9 @@ export function buildQuery(topic: string, newfiText: string): string {
     }
   }
 
-  return `${topicTerms} ${extraTerms.join(" ")} ${keyTermMatches.join(" ")}`.trim();
+  // Also tokenize the full newfiText and add meaningful words as additional signal.
+  // This ensures highly specific terms from the guideline itself appear in the query.
+  const newfiTokens = tokenize(newfiText).slice(0, 30);
+
+  return `${topicTerms} ${categoryTerms} ${extraTerms.join(" ")} ${keyTermMatches.join(" ")} ${newfiTokens.join(" ")}`.trim();
 }

@@ -210,23 +210,27 @@ export async function runTabComparison(
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const query = buildQuery(row.topic, row.newfiText);
-    const results = searchIndex(index, query, 3);
+    const query = buildQuery(row.topic, row.newfiText, row.category);
+    const results = searchIndex(index, query, 5);
 
     let sellerText = "Not addressed";
     let pageRef = "N/A";
 
-    if (results.length > 0 && results[0].rawScore > 0.05) {
-      const best = results[0];
-      // Validate: at least one topic keyword must appear in the result text
-      const topicTokens = row.topic.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).filter(w => w.length > 3);
-      const sellerLower = best.text.toLowerCase();
-      const hasTopicRelevance = topicTokens.some(t => sellerLower.includes(t));
+    // Validate: at least one topic keyword must appear in the result text.
+    // Use length > 2 so 3-char terms like "LTV", "DTI" are included.
+    const topicTokens = row.topic.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).filter(w => w.length > 2);
+
+    // Cascade through top results; pick the first one that passes topic relevance check
+    for (const candidate of results) {
+      if (candidate.rawScore <= 0.05) break; // remaining results are noise
+      const candidateLower = candidate.text.toLowerCase();
+      const hasTopicRelevance = topicTokens.some(t => candidateLower.includes(t));
       if (hasTopicRelevance) {
-        sellerText = best.text.length > 800
-          ? best.text.slice(0, 800) + "..."
-          : best.text;
-        pageRef = `p.${best.pageNum}`;
+        sellerText = candidate.text.length > 800
+          ? candidate.text.slice(0, 800) + "..."
+          : candidate.text;
+        pageRef = `p.${candidate.pageNum}`;
+        break;
       }
     }
 
