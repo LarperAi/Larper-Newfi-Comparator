@@ -24,7 +24,7 @@ async function loadPdfJs() {
     // Use empty workerSrc so pdfjs runs synchronously in the main thread (fake worker).
     // This is more reliable than CDN workers which can fail due to MIME type or CORS issues
     // in Vercel static deployments.
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
   }
   return pdfjsLib;
 }
