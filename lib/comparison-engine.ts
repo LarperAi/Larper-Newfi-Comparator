@@ -12,11 +12,16 @@ import type {
 // ── Number extraction ────────────────────────────────────────────────
 
 /**
- * Extract all numbers from text (handles percentages, dollar amounts, plain integers).
+ * Extract all numbers from text.
+ * Handles: "640 FICO" → 640, "75% LTV" → 75, "3.5%" → 3.5, "12 months" → 12,
+ *          "$500,000" → 500000, plain integers, and decimals.
  */
 function extractNumbers(text: string): number[] {
-  const pattern = /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/g;
-  const matches = text.replace(/\$|%/g, "").match(pattern) || [];
+  // Match numbers that may be followed by optional punctuation/unit context.
+  // Strip currency symbols and percent signs before matching so they don't block the digit.
+  const cleaned = text.replace(/\$|%/g, "");
+  const pattern = /\b(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\b/g;
+  const matches = cleaned.match(pattern) || [];
   return matches.map(m => parseFloat(m.replace(/,/g, ""))).filter(n => !isNaN(n));
 }
 
@@ -45,8 +50,8 @@ function determineVerdict(
   const newfiLower = newfiText.toLowerCase();
   const sellerLower = sellerText.toLowerCase();
 
-  // SILENT: no seller text found
-  if (!sellerText || sellerText === "Not addressed") {
+  // SILENT: no seller text found, or seller text is too short to be meaningful (likely noise)
+  if (!sellerText || sellerText === "Not addressed" || sellerText.length < 30) {
     return {
       verdict: "SILENT / NOT ADDRESSED",
       creditConcern: "MEDIUM",
@@ -85,9 +90,11 @@ function determineVerdict(
     const newfiPrimary = newfiNums[0];
     const sellerPrimary = sellerNums[0];
 
-    // Determine if this is a minimum or maximum context
-    const isMinimumContext = /minimum|min |at least|floor/i.test(newfiText + " " + topic);
-    const isMaximumContext = /maximum|max |not more than|up to|no more than/i.test(newfiText + " " + topic);
+    // Determine if this is a minimum or maximum context.
+    // Check all three texts so context words in the seller guide are also considered.
+    const combinedContext = newfiText + " " + topic + " " + sellerText;
+    const isMinimumContext = /minimum|min |at least|floor/i.test(combinedContext);
+    const isMaximumContext = /maximum|max |not more than|up to|no more than/i.test(combinedContext);
 
     if (isMinimumContext && Math.abs(sellerPrimary - newfiPrimary) > 0.5) {
       if (sellerPrimary < newfiPrimary) {
@@ -135,9 +142,13 @@ function determineVerdict(
     }
   }
 
-  // Fallback: keyword/text similarity check
-  const newfiWords = new Set(newfiLower.split(/\s+/).filter(w => w.length > 4));
-  const sellerWords = sellerLower.split(/\s+/).filter(w => w.length > 4);
+  // Fallback: keyword/text similarity check.
+  // Strip punctuation from each word after lowercasing so "640." and "640" both match.
+  const cleanWord = (w: string) => w.replace(/[^a-z]/g, "");
+  const newfiWords = new Set(
+    newfiLower.split(/\s+/).map(cleanWord).filter(w => w.length > 4)
+  );
+  const sellerWords = sellerLower.split(/\s+/).map(cleanWord).filter(w => w.length > 4);
   const overlap = sellerWords.filter(w => newfiWords.has(w)).length;
   const similarity = overlap / Math.max(newfiWords.size, 1);
 
