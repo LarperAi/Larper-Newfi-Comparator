@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import type {
@@ -38,7 +39,8 @@ type AppContextType = {
   dscrResult: TemplateComparisonResult | null;
   isComparing: boolean;
   comparisonProgress: number;
-  runComparison: () => Promise<void>;
+  comparisonError: string | null;
+  runComparison: () => Promise<boolean>;
 
   // Export
   exportFilledTemplate: (tab: "NON-QM" | "DSCR" | "BOTH") => Promise<void>;
@@ -54,9 +56,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [sellerLoading, setSellerLoading] = useState(false);
   const [sellerProgress, setSellerProgress] = useState(0);
   const [sellerPages, setSellerPages] = useState<PageText[]>([]);
+  // Ref so runComparison always reads the latest pages regardless of closure timing
+  const sellerPagesRef = useRef<PageText[]>([]);
 
   // Newfi template state
   const [newfiTemplate, setNewfiTemplate] = useState<NewfiTemplate | null>(null);
+  const newfiTemplateRef = useRef<NewfiTemplate | null>(null);
   const [templateLoading, setTemplateLoading] = useState(false);
 
   // Comparison state
@@ -64,6 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [dscrResult, setDscrResult] = useState<TemplateComparisonResult | null>(null);
   const [isComparing, setIsComparing] = useState(false);
   const [comparisonProgress, setComparisonProgress] = useState(0);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
 
   const loadSellerPDF = useCallback(async (file: File) => {
     setSellerFile(file);
@@ -78,6 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pageNum: i + 1,
         text,
       }));
+      sellerPagesRef.current = pages;
       setSellerPages(pages);
       setSellerReady(true);
     } catch (err) {
@@ -95,6 +102,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSellerLoading(false);
     setSellerProgress(0);
     setSellerPages([]);
+    sellerPagesRef.current = [];
     setNonQmResult(null);
     setDscrResult(null);
   }, []);
@@ -103,6 +111,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTemplateLoading(true);
     try {
       const template = await readNewfiTemplate(file);
+      newfiTemplateRef.current = template;
       setNewfiTemplate(template);
     } catch (err) {
       console.error("Template read failed:", err);
@@ -112,30 +121,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearTemplate = useCallback(() => {
+    newfiTemplateRef.current = null;
     setNewfiTemplate(null);
     setNonQmResult(null);
     setDscrResult(null);
   }, []);
 
-  const runComparison = useCallback(async () => {
-    if (!newfiTemplate || sellerPages.length === 0) return;
+  const runComparison = useCallback(async (): Promise<boolean> => {
+    // Read from refs to avoid stale closure issues
+    const pages = sellerPagesRef.current;
+    const template = newfiTemplateRef.current;
+
+    if (!template) {
+      setComparisonError("Newfi template not loaded. Please upload the .xlsx file.");
+      return false;
+    }
+    if (pages.length === 0) {
+      setComparisonError("Seller PDF pages are empty. The PDF may be image-based (scanned) with no extractable text.");
+      return false;
+    }
 
     setIsComparing(true);
     setComparisonProgress(0);
+    setComparisonError(null);
     setNonQmResult(null);
     setDscrResult(null);
 
     const seller = sellerName.replace(/\.[^/.]+$/, "");
-    const nonQmTotal = newfiTemplate.nonQmRows.length;
-    const dscrTotal = newfiTemplate.dscrRows.length;
-    const total = nonQmTotal + dscrTotal;
+    const nonQmTotal = template.nonQmRows.length;
+    const dscrTotal = template.dscrRows.length;
+    const total = Math.max(nonQmTotal + dscrTotal, 1);
     let completed = 0;
 
     try {
       // Run NON-QM tab
       const nqResult = await runTabComparison(
-        newfiTemplate.nonQmRows,
-        sellerPages,
+        template.nonQmRows,
+        pages,
         seller,
         (done) => {
           completed = done;
@@ -146,8 +168,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       // Run DSCR tab
       const dResult = await runTabComparison(
-        newfiTemplate.dscrRows,
-        sellerPages,
+        template.dscrRows,
+        pages,
         seller,
         (done) => {
           completed = nonQmTotal + done;
@@ -155,13 +177,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       );
       setDscrResult(dResult);
+      return true;
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       console.error("Comparison error:", err);
+      setComparisonError(`Comparison failed: ${msg}`);
+      return false;
     } finally {
       setIsComparing(false);
       setComparisonProgress(100);
     }
-  }, [newfiTemplate, sellerPages, sellerName]);
+  }, [sellerName]);
 
   const exportFilledTemplate = useCallback(async (tab: "NON-QM" | "DSCR" | "BOTH") => {
     const rows =
@@ -292,6 +318,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dscrResult,
         isComparing,
         comparisonProgress,
+        comparisonError,
         runComparison,
         exportFilledTemplate,
       }}

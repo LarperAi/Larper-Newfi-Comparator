@@ -37,24 +37,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${sora.variable} ${jetbrainsMono.variable} h-full antialiased`}
-      suppressHydrationWarning
+      className={`${inter.variable} ${sora.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                const stored = localStorage.getItem('theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (stored === 'dark' || (!stored && prefersDark)) {
-                  document.documentElement.classList.add('dark');
-                }
-              })();
-            `,
-          }}
-        />
-      </head>
+      <head />
       <body className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
         <AppProvider>{children}</AppProvider>
       </body>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { DocumentUploadCard } from "@/components/DocumentUploadCard";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useApp } from "@/lib/app-context";
 import type { ComparisonRow, TemplateVerdict, TemplateComparisonResult } from "@/lib/types";
 
@@ -13,7 +12,7 @@ export default function Home() {
     newfiTemplate, templateLoading,
     loadNewfiTemplate, clearTemplate,
     nonQmResult, dscrResult,
-    isComparing, comparisonProgress,
+    isComparing, comparisonProgress, comparisonError,
     runComparison, exportFilledTemplate,
   } = useApp();
 
@@ -77,7 +76,6 @@ export default function Home() {
                 ))}
               </div>
 
-              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -140,8 +138,17 @@ export default function Home() {
 
             {/* Run comparison */}
             <div className="flex flex-col items-center gap-4 pt-2">
-              <button
-                onClick={async () => { await runComparison(); setActiveTab("results"); }}
+              {comparisonError && (
+              <div className="w-full max-w-xl mx-auto px-4 py-3 rounded-[12px] bg-[rgba(255,69,58,0.12)] border border-[rgba(255,69,58,0.3)] text-[#FF453A] text-[13px] text-center">
+                {comparisonError}
+              </div>
+            )}
+
+            <button
+                onClick={async () => {
+                  const ok = await runComparison();
+                  if (ok) setActiveTab("results");
+                }}
                 disabled={!canCompare}
                 className={`group px-12 py-4 rounded-[16px] text-white font-display font-semibold text-[16px] transition-all flex items-center gap-3 ${
                   canCompare
