@@ -44,7 +44,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="font-display font-semibold text-[15px] tracking-tight gradient-text">Newfi</span>
-                  <span className="text-[rgba(255,255,255,0.65)] font-medium text-[13px] tracking-tight">Guideline Comparator</span>
+                  <span className="text-[var(--text-secondary)] font-medium text-[13px] tracking-tight">Guideline Comparator</span>
                 </div>
               </div>
 
@@ -56,8 +56,8 @@ export default function Home() {
                     onClick={() => setActiveTab(tab)}
                     className={`flex items-center gap-2 px-4 py-[7px] rounded-[9px] text-[13px] font-medium transition-all duration-200 ${
                       activeTab === tab
-                        ? "bg-[rgba(255,255,255,0.12)] text-white shadow-lg"
-                        : "text-[rgba(255,255,255,0.5)] hover:text-white hover:bg-[rgba(255,255,255,0.06)]"
+                        ? "bg-[rgba(0,0,0,0.06)] dark:bg-[rgba(255,255,255,0.12)] text-[var(--text-primary)] shadow-lg"
+                        : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[rgba(0,0,0,0.04)] dark:hover:bg-[rgba(255,255,255,0.06)]"
                     }`}
                   >
                     {tab === "upload" ? (
@@ -97,9 +97,9 @@ export default function Home() {
               <div className="text-center pt-8 pb-4">
                 <h1 className="font-display text-[42px] font-bold tracking-tight mb-3 leading-tight">
                   <span className="gradient-text-animated">Guideline</span>{" "}
-                  <span className="text-[rgba(255,255,255,0.9)]">Comparator</span>
+                  <span className="text-[var(--text-primary)]">Comparator</span>
                 </h1>
-                <p className="text-[16px] text-[rgba(255,255,255,0.5)] max-w-lg mx-auto leading-relaxed">
+                <p className="text-[16px] text-[var(--text-secondary)] max-w-lg mx-auto leading-relaxed">
                   Upload a seller guide PDF and Newfi&apos;s Excel template. The app finds matching text in the seller guide for each row and assigns a verdict.
                 </p>
               </div>
@@ -144,26 +144,26 @@ export default function Home() {
             {/* Run comparison */}
             <div className="flex flex-col items-center gap-4 pt-2">
               {comparisonError && (
-              <div className="w-full max-w-xl mx-auto px-4 py-3 rounded-[12px] bg-[rgba(255,69,58,0.12)] border border-[rgba(255,69,58,0.3)] text-[#FF453A] text-[13px] text-center">
-                {comparisonError}
-              </div>
-            )}
+                <div className="w-full max-w-xl mx-auto px-4 py-3 rounded-[12px] bg-[rgba(255,69,58,0.12)] border border-[rgba(255,69,58,0.3)] text-[#FF453A] text-[13px] text-center">
+                  {comparisonError}
+                </div>
+              )}
 
-            <button
+              <button
                 onClick={async () => {
                   const ok = await runComparison();
                   if (ok) setActiveTab("results");
                 }}
                 disabled={!canCompare}
-                className={`group px-12 py-4 rounded-[16px] text-white font-display font-semibold text-[16px] transition-all flex items-center gap-3 ${
+                className={`group px-12 py-4 rounded-[16px] font-display font-semibold text-[16px] transition-all flex items-center gap-3 ${
                   canCompare
-                    ? "bg-gradient-to-b from-[#0A84FF] to-[#0066CC] hover:scale-[1.02] hover:shadow-[0_8px_32px_rgba(10,132,255,0.4)] active:scale-[0.98]"
-                    : "bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.3)] cursor-not-allowed"
+                    ? "bg-gradient-to-b from-[#0A84FF] to-[#0066CC] text-white hover:scale-[1.02] hover:shadow-[0_8px_32px_rgba(10,132,255,0.4)] active:scale-[0.98]"
+                    : "bg-[rgba(0,0,0,0.05)] dark:bg-[rgba(255,255,255,0.08)] text-[rgba(0,0,0,0.25)] dark:text-[rgba(255,255,255,0.3)] cursor-not-allowed"
                 }`}
               >
                 {isComparing ? (
                   <>
-                    <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    <div className="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
                     Comparing... {comparisonProgress}%
                   </>
                 ) : (
@@ -183,7 +183,7 @@ export default function Home() {
               )}
 
               {!canCompare && !isComparing && (
-                <p className="text-[13px] text-[rgba(255,255,255,0.35)]">
+                <p className="text-[13px] text-[var(--text-tertiary)]">
                   {!sellerReady && !newfiTemplate
                     ? "Upload both files to continue"
                     : !sellerReady
@@ -201,12 +201,12 @@ export default function Home() {
             {!hasResults ? (
               <div className="text-center py-20">
                 <div className="w-24 h-24 mx-auto mb-6 rounded-2xl liquid-glass flex items-center justify-center animate-float">
-                  <svg className="w-12 h-12 text-[rgba(255,255,255,0.25)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="w-12 h-12 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                   </svg>
                 </div>
-                <h2 className="font-display text-[22px] font-semibold text-white mb-3">No Results Yet</h2>
-                <p className="text-[15px] text-[rgba(255,255,255,0.45)] max-w-md mx-auto">Upload files and run the comparison on the Upload tab.</p>
+                <h2 className="font-display text-[22px] font-semibold text-[var(--text-primary)] mb-3">No Results Yet</h2>
+                <p className="text-[15px] text-[var(--text-secondary)] max-w-md mx-auto">Upload files and run the comparison on the Upload tab.</p>
                 <button onClick={() => setActiveTab("upload")} className="mt-6 px-6 py-3 rounded-[12px] bg-[#0A84FF] text-white font-display font-medium text-[14px] hover:opacity-90 transition-all">
                   Go to Upload
                 </button>
@@ -226,8 +226,8 @@ export default function Home() {
                         onClick={() => setResultTab(t)}
                         className={`px-5 py-2 rounded-[10px] text-[13px] font-medium transition-all ${
                           resultTab === t
-                            ? "bg-[rgba(255,255,255,0.12)] text-white"
-                            : "text-[rgba(255,255,255,0.5)] liquid-glass-card hover:text-white"
+                            ? "bg-[rgba(0,0,0,0.06)] dark:bg-[rgba(255,255,255,0.12)] text-[var(--text-primary)]"
+                            : "text-[var(--text-secondary)] liquid-glass-card hover:text-[var(--text-primary)]"
                         }`}
                       >
                         {t} {result ? `(${result.totalRows})` : ""}
@@ -247,7 +247,7 @@ export default function Home() {
                     </button>
                     <button
                       onClick={() => exportFilledTemplate("BOTH")}
-                      className="flex items-center gap-2 px-4 py-2 rounded-[10px] liquid-glass-card text-[rgba(255,255,255,0.7)] text-[13px] font-medium hover:text-white transition-all"
+                      className="flex items-center gap-2 px-4 py-2 rounded-[10px] liquid-glass-card text-[var(--text-secondary)] text-[13px] font-medium hover:text-[var(--text-primary)] transition-all"
                     >
                       Export All
                     </button>
@@ -297,7 +297,7 @@ function SummaryBar({
       {cards.map((c) => (
         <div key={c.label} className="liquid-glass-card p-4 rounded-[14px] text-center">
           <p className="text-[28px] font-display font-bold font-mono" style={{ color: c.color }}>{c.value}</p>
-          <p className="text-[11px] text-[rgba(255,255,255,0.45)] font-display uppercase tracking-wider mt-1">{c.label}</p>
+          <p className="text-[11px] text-[var(--text-tertiary)] font-display uppercase tracking-wider mt-1">{c.label}</p>
         </div>
       ))}
     </div>
@@ -326,7 +326,7 @@ function ResultsTable({ result }: { result: TemplateComparisonResult }) {
   return (
     <div className="liquid-glass-strong overflow-hidden rounded-[16px]">
       {/* Filter bar */}
-      <div className="p-4 border-b border-[rgba(255,255,255,0.06)] flex flex-wrap gap-2">
+      <div className="p-4 border-b border-[var(--card-border)] flex flex-wrap gap-2">
         {filters.map((f) => {
           const count = f === "ALL" ? result.rows.length : result.rows.filter((r) => r.verdict === f).length;
           const cfg = f === "ALL" ? null : VERDICT_CONFIG[f];
@@ -337,7 +337,7 @@ function ResultsTable({ result }: { result: TemplateComparisonResult }) {
               className={`px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all ${
                 filter === f
                   ? "text-white shadow-md"
-                  : "text-[rgba(255,255,255,0.5)] liquid-glass-card hover:text-white"
+                  : "text-[var(--text-secondary)] liquid-glass-card hover:text-[var(--text-primary)]"
               }`}
               style={filter === f && cfg ? { background: cfg.text } : filter === f ? { background: "#0A84FF" } : {}}
             >
@@ -348,7 +348,7 @@ function ResultsTable({ result }: { result: TemplateComparisonResult }) {
       </div>
 
       {/* Rows */}
-      <div className="divide-y divide-[rgba(255,255,255,0.04)] max-h-[620px] overflow-y-auto">
+      <div className="divide-y divide-[var(--card-border)] max-h-[620px] overflow-y-auto">
         {filtered.map((row) => (
           <ResultRow
             key={row.rowNum}
@@ -358,7 +358,7 @@ function ResultsTable({ result }: { result: TemplateComparisonResult }) {
           />
         ))}
         {filtered.length === 0 && (
-          <div className="py-10 text-center text-[rgba(255,255,255,0.35)] text-[14px]">No rows match this filter.</div>
+          <div className="py-10 text-center text-[var(--text-tertiary)] text-[14px]">No rows match this filter.</div>
         )}
       </div>
     </div>
@@ -378,7 +378,7 @@ function ResultRow({
 
   return (
     <div
-      className="p-4 hover:bg-[rgba(255,255,255,0.02)] cursor-pointer transition-colors"
+      className="p-4 hover:bg-[rgba(0,0,0,0.02)] dark:hover:bg-[rgba(255,255,255,0.02)] cursor-pointer transition-colors"
       onClick={onToggle}
     >
       <div className="flex gap-3 items-start">
@@ -393,7 +393,7 @@ function ResultRow({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] text-[rgba(255,255,255,0.35)] uppercase tracking-wider font-display">{row.category}</span>
+            <span className="text-[11px] text-[var(--text-tertiary)] uppercase tracking-wider font-display">{row.category}</span>
             {row.creditConcern && (
               <span
                 className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
@@ -406,20 +406,20 @@ function ResultRow({
               </span>
             )}
           </div>
-          <p className="text-[14px] text-white font-medium mb-1">{row.topic}</p>
-          <p className="text-[13px] text-[rgba(255,255,255,0.55)] line-clamp-2">{row.analysis}</p>
+          <p className="text-[14px] text-[var(--text-primary)] font-medium mb-1">{row.topic}</p>
+          <p className="text-[13px] text-[var(--text-secondary)] line-clamp-2">{row.analysis}</p>
 
           {expanded && (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 animate-fade-in">
               <div className="p-3 rounded-[10px] liquid-glass">
-                <p className="text-[11px] text-[rgba(255,255,255,0.4)] mb-1.5 font-display uppercase tracking-wider">Newfi</p>
-                <p className="text-[13px] text-[rgba(255,255,255,0.75)] leading-relaxed">{row.newfiText}</p>
+                <p className="text-[11px] text-[var(--text-tertiary)] mb-1.5 font-display uppercase tracking-wider">Newfi</p>
+                <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">{row.newfiText}</p>
               </div>
               <div className="p-3 rounded-[10px] liquid-glass">
-                <p className="text-[11px] text-[rgba(255,255,255,0.4)] mb-1.5 font-display uppercase tracking-wider">
+                <p className="text-[11px] text-[var(--text-tertiary)] mb-1.5 font-display uppercase tracking-wider">
                   Seller {row.pageRef !== "N/A" ? `· ${row.pageRef}` : ""}
                 </p>
-                <p className="text-[13px] text-[rgba(255,255,255,0.75)] leading-relaxed">{row.sellerText}</p>
+                <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">{row.sellerText}</p>
               </div>
             </div>
           )}
@@ -427,7 +427,7 @@ function ResultRow({
 
         {/* Expand toggle */}
         <svg
-          className={`w-5 h-5 text-[rgba(255,255,255,0.3)] transition-transform duration-300 shrink-0 mt-0.5 ${expanded ? "rotate-180" : ""}`}
+          className={`w-5 h-5 text-[var(--text-tertiary)] transition-transform duration-300 shrink-0 mt-0.5 ${expanded ? "rotate-180" : ""}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />

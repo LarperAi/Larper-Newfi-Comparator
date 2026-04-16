@@ -110,14 +110,14 @@ export function DocumentUploadCard({
           background: `linear-gradient(135deg, ${color}80, ${secondaryColor}40, transparent)`,
         }}
       >
-        <div className="w-full h-full rounded-[15px] bg-[#1c1c1e]" />
+        <div className="w-full h-full rounded-[15px] bg-[var(--card-bg)]" />
       </div>
 
       <div
         className="relative liquid-glass-card"
         style={{
           background: isDragOver
-            ? `linear-gradient(135deg, rgba(10,132,255,0.08), rgba(30,30,32,0.8))`
+            ? `linear-gradient(135deg, rgba(10,132,255,0.08), var(--card-bg))`
             : undefined,
         }}
       >
@@ -151,14 +151,14 @@ export function DocumentUploadCard({
               )}
             </div>
             <div className="flex-1">
-              <h3 className="font-display font-semibold text-[16px] text-slate-900 dark:text-white">{label}</h3>
-              <p className="text-[13px] text-[rgba(255,255,255,0.45)]">{sublabel}</p>
+              <h3 className="font-display font-semibold text-[16px] text-[var(--text-primary)]">{label}</h3>
+              <p className="text-[13px] text-[var(--text-tertiary)]">{sublabel}</p>
             </div>
             {/* Status dot */}
             <div
               className="w-3 h-3 rounded-full transition-all duration-300"
               style={{
-                background: isReady ? "#30D158" : uploaded ? "#FF9F0A" : "rgba(255,255,255,0.2)",
+                background: isReady ? "#30D158" : uploaded ? "#FF9F0A" : "var(--text-tertiary)",
                 boxShadow: isReady ? "0 0 12px #30D158" : "none",
               }}
             />
@@ -173,17 +173,17 @@ export function DocumentUploadCard({
                   boxShadow: isHovered ? `0 20px 40px ${color}20` : "none",
                 }}
               >
-                <svg className="w-10 h-10 text-[rgba(255,255,255,0.4)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="w-10 h-10 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
               </div>
-              <p className="text-[17px] font-display text-white mb-2 font-medium">Drop file here</p>
-              <p className="text-[14px] text-[rgba(255,255,255,0.4)]">or click to browse</p>
-              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(255,255,255,0.05)]">
-                <svg className="w-4 h-4 text-[rgba(255,255,255,0.4)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <p className="text-[17px] font-display text-[var(--text-primary)] mb-2 font-medium">Drop file here</p>
+              <p className="text-[14px] text-[var(--text-secondary)]">or click to browse</p>
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(255,255,255,0.05)]">
+                <svg className="w-4 h-4 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.25A2.25 2.25 0 003 5.25v13.5A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V5.25a2.25 2.25 0 00-2.25-2.25H10.5z" />
                 </svg>
-                <span className="text-[12px] text-[rgba(255,255,255,0.4)]">{fileHint}</span>
+                <span className="text-[12px] text-[var(--text-tertiary)]">{fileHint}</span>
               </div>
             </div>
           ) : (
@@ -199,17 +199,17 @@ export function DocumentUploadCard({
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-display font-medium text-[15px] text-white truncate">{fileName}</p>
+                  <p className="font-display font-medium text-[15px] text-[var(--text-primary)] truncate">{fileName}</p>
                   {fileSize && (
-                    <p className="text-[13px] text-[rgba(255,255,255,0.45)] font-mono">{formatFileSize(fileSize)}</p>
+                    <p className="text-[13px] text-[var(--text-secondary)] font-mono">{formatFileSize(fileSize)}</p>
                   )}
                 </div>
                 {!isLoading && !isReady && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onClear(); }}
-                    className="p-2.5 rounded-[10px] hover:bg-[rgba(255,255,255,0.1)] transition-all hover:rotate-90"
+                    className="p-2.5 rounded-[10px] hover:bg-[rgba(0,0,0,0.06)] dark:hover:bg-[rgba(255,255,255,0.1)] transition-all hover:rotate-90"
                   >
-                    <svg className="w-5 h-5 text-[rgba(255,255,255,0.45)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-5 h-5 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -222,10 +222,10 @@ export function DocumentUploadCard({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-5 h-5 rounded-full border-2 border-[#0A84FF] border-t-transparent animate-spin" />
-                      <span className="text-[14px] text-[rgba(255,255,255,0.7)] font-display">{loadingLabel}</span>
+                      <span className="text-[14px] text-[var(--text-secondary)] font-display">{loadingLabel}</span>
                     </div>
                     {progress > 0 && progress < 100 && (
-                      <span className="text-[15px] text-white font-medium font-mono">{progress}%</span>
+                      <span className="text-[15px] text-[var(--text-primary)] font-medium font-mono">{progress}%</span>
                     )}
                   </div>
                   <div className="progress-container h-2 rounded-full">
